@@ -15,7 +15,7 @@ public class SponsorController : ControllerBase
     private readonly IMapper _mapper;
     private readonly ILogger<SponsorController> _logger;
 
-    public SponsorController(
+   /* public SponsorController(
         ISponsorService sponsorService,
         IMapper mapper,
         ILogger<SponsorController> logger)
