@@ -44,8 +44,109 @@ public class SponsorController : ControllerBase
         return Ok(sponsorDto);
     }
 
+    [HttpPost]
+    public async Task<ActionResult<SponsorResponseDTO>> Create(SponsorRequestDTO dto)
+    {
+        try
+        {
+            var sponsor = _mapper.Map<Sponsor>(dto);
+            var createdSponsor = await _sponsorService.CreateAsync(sponsor);
+            var responseDto = _mapper.Map<SponsorResponseDTO>(createdSponsor);
 
+            return CreatedAtAction(
+                nameof(GetById),
+                new { id = responseDto.Id },
+                responseDto);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+    }
 
+    [HttpPut("{id}")]
+    public async Task<ActionResult> Update(int id, SponsorRequestDTO dto)
+    {
+        try
+        {
+            var sponsor = _mapper.Map<Sponsor>(dto);
+            await _sponsorService.UpdateAsync(id, sponsor);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+    }
 
+    [HttpDelete("{id}")]
+    public async Task<ActionResult> Delete(int id)
+    {
+        try
+        {
+            await _sponsorService.DeleteAsync(id);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("{id}/tournaments")]
+    public async Task<ActionResult<IEnumerable<TournamentSponsorResponseDTO>>> GetTournamentsBySponsor(int id)
+    {
+        try
+        {
+            var tournamentSponsors = await _sponsorService.GetTournamentsBySponsorAsync(id);
+            var responseDto = _mapper.Map<IEnumerable<TournamentSponsorResponseDTO>>(tournamentSponsors);
+            return Ok(responseDto);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("{id}/tournaments")]
+    public async Task<ActionResult<TournamentSponsorResponseDTO>> LinkTournament(int id, TournamentSponsorRequestDTO dto)
+    {
+        try
+        {
+            var createdLink = await _sponsorService.LinkTournamentAsync(id, dto.TournamentId, dto.ContractAmount);
+            var responseDto = _mapper.Map<TournamentSponsorResponseDTO>(createdLink);
+
+            return CreatedAtAction(
+                nameof(GetTournamentsBySponsor),
+                new { id },
+                responseDto);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+    }
+
+    [HttpDelete("{id}/tournaments/{tournamentId}")]
+    public async Task<ActionResult> UnlinkTournament(int id, int tournamentId)
+    {
+        try
+        {
+            await _sponsorService.UnlinkTournamentAsync(id, tournamentId);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
 
 }
