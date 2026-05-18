@@ -2,7 +2,7 @@
 
 namespace SportsLeague.API.DTOs.Request;
 
-public class UpdateStatusDTO
+public class UpdateTournamentStatusDTO
 {
     public TournamentStatus Status { get; set; }
 }

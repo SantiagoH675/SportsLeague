@@ -19,6 +19,12 @@ namespace SportsLeague.DataAccess.Context
         public DbSet<Sponsor> Sponsors { get; set; } // NUEVO
         public DbSet<TournamentSponsor> TournamentSponsors { get; set; } // NUEVO
 
+        public DbSet<Match> Matches => Set<Match>();
+
+        public DbSet<MatchResult> MatchResults => Set<MatchResult>();
+        public DbSet<Goal> Goals => Set<Goal>();
+        public DbSet<Card> Cards => Set<Card>();
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -201,6 +207,108 @@ namespace SportsLeague.DataAccess.Context
 
                 entity.HasIndex(ts => new { ts.TournamentId, ts.SponsorId })
                     .IsUnique();
+            });
+
+            // ── Match Configuration ──
+            modelBuilder.Entity<Match>(entity =>
+            {
+                entity.HasKey(m => m.Id);
+                entity.Property(m => m.MatchDate)
+                      .IsRequired();
+                entity.Property(m => m.Venue)
+                      .HasMaxLength(150);
+                entity.Property(m => m.Matchday)
+                      .IsRequired();
+                entity.Property(m => m.Status)
+                      .IsRequired();
+                entity.Property(m => m.CreatedAt)
+                      .IsRequired();
+                entity.Property(m => m.UpdatedAt)
+                      .IsRequired(false);
+
+                // Relación con Tournament (Cascade: eliminar torneo elimina partidos)
+                entity.HasOne(m => m.Tournament)
+                      .WithMany(t => t.Matches)
+                      .HasForeignKey(m => m.TournamentId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                // Relación con HomeTeam (Restrict: evita ciclo de cascada)
+                entity.HasOne(m => m.HomeTeam)
+                      .WithMany(t => t.HomeMatches)
+                      .HasForeignKey(m => m.HomeTeamId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                // Relación con AwayTeam (Restrict: evita ciclo de cascada)
+                entity.HasOne(m => m.AwayTeam)
+                      .WithMany(t => t.AwayMatches)
+                      .HasForeignKey(m => m.AwayTeamId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                // Relación con Referee (Restrict: no eliminar árbitro con partidos)
+                entity.HasOne(m => m.Referee)
+                      .WithMany(r => r.Matches)
+                      .HasForeignKey(m => m.RefereeId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ── MatchResult Configuration ──
+            modelBuilder.Entity<MatchResult>(entity =>
+            {
+                entity.HasKey(mr => mr.Id);
+                entity.Property(mr => mr.HomeGoals).IsRequired();
+                entity.Property(mr => mr.AwayGoals).IsRequired();
+                entity.Property(mr => mr.Observations).HasMaxLength(500);
+                entity.Property(mr => mr.CreatedAt).IsRequired();
+                entity.Property(mr => mr.UpdatedAt).IsRequired(false);
+
+                // Relación 1:1 con Match
+                entity.HasOne(mr => mr.Match)
+                      .WithOne(m => m.MatchResult)
+                      .HasForeignKey<MatchResult>(mr => mr.MatchId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                // Índice único en MatchId garantiza relación 1:1
+                entity.HasIndex(mr => mr.MatchId).IsUnique();
+            });
+
+            // ── Goal Configuration ──
+            modelBuilder.Entity<Goal>(entity =>
+            {
+                entity.HasKey(g => g.Id);
+                entity.Property(g => g.Minute).IsRequired();
+                entity.Property(g => g.Type).IsRequired();
+                entity.Property(g => g.CreatedAt).IsRequired();
+                entity.Property(g => g.UpdatedAt).IsRequired(false);
+
+                entity.HasOne(g => g.Match)
+                      .WithMany(m => m.Goals)
+                      .HasForeignKey(g => g.MatchId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(g => g.Player)
+                      .WithMany(p => p.Goals)
+                      .HasForeignKey(g => g.PlayerId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ── Card Configuration ──
+            modelBuilder.Entity<Card>(entity =>
+            {
+                entity.HasKey(c => c.Id);
+                entity.Property(c => c.Minute).IsRequired();
+                entity.Property(c => c.Type).IsRequired();
+                entity.Property(c => c.CreatedAt).IsRequired();
+                entity.Property(c => c.UpdatedAt).IsRequired(false);
+
+                entity.HasOne(c => c.Match)
+                      .WithMany(m => m.Cards)
+                      .HasForeignKey(c => c.MatchId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(c => c.Player)
+                      .WithMany(p => p.Cards)
+                      .HasForeignKey(c => c.PlayerId)
+                      .OnDelete(DeleteBehavior.Restrict);
             });
 
         }

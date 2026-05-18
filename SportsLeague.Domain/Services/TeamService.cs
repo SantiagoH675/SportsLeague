@@ -35,7 +35,7 @@ public class TeamService : ITeamService
 
     public async Task<Team> CreateAsync(Team team)
     {
-        
+        // Validación de negocio: nombre único
         var existingTeam = await _teamRepository.GetByNameAsync(team.Name);
         if (existingTeam != null)
         {
@@ -58,7 +58,7 @@ public class TeamService : ITeamService
                 $"No se encontró el equipo con ID {id}");
         }
 
-        
+        // Validar nombre único (si cambió)
         if (existingTeam.Name != team.Name)
         {
             var teamWithSameName = await _teamRepository.GetByNameAsync(team.Name);
